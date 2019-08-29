@@ -1,4 +1,4 @@
-# Movie-Recommendation-System
+# Movie-Recommendation-System-Sakila
 This is a movie recommendation system built using the sakila movie dataset.
 
 ### Steps to Run the code:
