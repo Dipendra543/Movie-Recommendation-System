@@ -6,7 +6,7 @@ import warnings
 warnings.filterwarnings('ignore')
 
 
-def select_top_three_genre(df):
+def select_top_genre(df):
     """
 
     :param df: give the grouped dataframe
@@ -22,6 +22,10 @@ def select_top_three_genre(df):
         top3_dict[each_element[0]] = [each_element[1], temp]
 
     return top3_dict
+
+
+def get_top_genre(genre_dict, customer_id):
+    return genre_dict[customer_id]
 
 
 def get_actor_list(connection):
@@ -68,7 +72,8 @@ def get_movie_similarity_dfs(connection):
     movie_price = whole_df[['FID', 'price']]
     movie_length = whole_df[['FID', 'length']]
 
-    return movie_genre, encoded_actor_df, movie_price, movie_length
+    fid_list = list(whole_df['FID']) # The fid_list is used by the function "create_df_with_cos"
+    return movie_genre, encoded_actor_df, movie_price, movie_length, fid_list
 
 
 def find_movies_similarity(all_dataframes_tuples):
@@ -77,29 +82,64 @@ def find_movies_similarity(all_dataframes_tuples):
     cos_price_similarity = cosine_similarity(all_dataframes_tuples[2].values)*0.1
     cos_length_similarity = cosine_similarity(all_dataframes_tuples[3].values)*0.1
     total_cos_similarity = cos_genre_similarity+cos_actor_similarity+cos_price_similarity+cos_length_similarity
-    print(total_cos_similarity)
 
-    return total_cos_similarity
+    return total_cos_similarity, all_dataframes_tuples[4]
+
+
+def create_df_with_cos(cos_similarity_matrix):
+    fid_list = cos_similarity_matrix[1]
+    global movies_sim_df
+    movies_sim_df = pd.DataFrame(cos_similarity_matrix[0], columns=fid_list, index=fid_list)
+    # print(movies_sim_df.head(2))
+    return movies_sim_df
+
+
+def get_similar_movies(film_id):
+    # print(film_id)
+    df = movies_sim_df.loc[movies_sim_df.index == film_id].reset_index().\
+        melt(id_vars='index', var_name='sim_moveId', value_name='relevance').\
+        sort_values('relevance', axis=0, ascending=False)[1:6]
+    # print(df)
+    return df
+
+
+def create_similarity_df():
+    global movies_similarity
+    movies_similarity = pd.DataFrame(columns=['index', 'sim_moveId', 'relevance'])
+    for x in movies_sim_df.index.tolist():
+        movies_similarity = movies_similarity.append(get_similar_movies(x))
+
+    movies_similarity.set_index('index', inplace=True)
+    print(movies_similarity.head(10))
+
+
+def recommend_movie(film_id):
+    print("Printing the similar movies::")
+    print(movies_similarity.loc[film_id])
 
 
 if __name__ == "__main__":
     db_connection = ad.connect_database('localhost', 'root', os.getenv("MYSQL_LOCALHOST_PASSWORD"), 'sakila')
-    # query = """select rental.customer_id, CONCAT(customer.first_name," ",customer.last_name) as FULL_NAME,
-    #         category.name as Category, count(*) as COUNT_RENTED_MOVIES
-    #         from rental
-    #         join inventory on rental.inventory_id = inventory.inventory_id
-    #         join film_category on inventory.film_id = film_category.film_id
-    #         join category on film_category.category_id = category.category_id
-    #         join customer on customer.customer_id = rental.customer_id
-    #         group by rental.customer_id, category.category_id
-    #         order by FULL_NAME, COUNT_RENTED_MOVIES desc;
-    #
-    #     """
-    # read_data = ad.get_data_from_query(db_connection, query, pd_df=True)
-    # ad.set_multi_index(read_data, ['customer_id', 'FULL_NAME'], inplace=True)
-    # top3_genres_customers = select_top_three_genre(read_data)
-    # print(top3_genres_customers.keys())
+    query = """select rental.customer_id, CONCAT(customer.first_name," ",customer.last_name) as FULL_NAME,
+            category.name as Category, count(*) as COUNT_RENTED_MOVIES
+            from rental
+            join inventory on rental.inventory_id = inventory.inventory_id
+            join film_category on inventory.film_id = film_category.film_id
+            join category on film_category.category_id = category.category_id
+            join customer on customer.customer_id = rental.customer_id
+            group by rental.customer_id, category.category_id
+            order by FULL_NAME, COUNT_RENTED_MOVIES desc;
+
+        """
+    read_data = ad.get_data_from_query(db_connection, query, pd_df=True)
+    ad.set_multi_index(read_data, ['customer_id', 'FULL_NAME'], inplace=True)
+    top3_genres_customers = select_top_genre(read_data)
+    # print(get_top_genre(top3_genres_customers,2))
+
 
     all_similarity_dfs = get_movie_similarity_dfs(db_connection)
-    all_movies_similarity = find_movies_similarity(all_similarity_dfs)
-    # get_actor_list(db_connection)
+    total_cosine_sim = find_movies_similarity(all_similarity_dfs)
+    create_df_with_cos(total_cosine_sim)
+    create_similarity_df()
+    recommend_movie(8)
+

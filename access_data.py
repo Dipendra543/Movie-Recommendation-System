@@ -19,7 +19,6 @@ def connect_database(host, user, passwd, database):
 
 def get_data_from_query(connection, query, pd_df=True):
     """
-
     :param connection: the database connection
     :param query: required query to execute, should be 'SELECT' query
     :param pd_df: if true, returns pandas dataframe
