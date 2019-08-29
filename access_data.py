@@ -1,6 +1,7 @@
 #  Access the sakila database data from mysql server
 import mysql.connector
 import pandas as pd
+import os
 
 desired_width = 320
 pd.set_option('display.width', desired_width)
@@ -40,6 +41,10 @@ def set_multi_index(df, col_list, inplace=True):
     else:
         new_df = df.set_index(col_list)
         return new_df
+
+
+global db_connection
+db_connection = connect_database('localhost', 'root', os.getenv("MYSQL_LOCALHOST_PASSWORD"), 'sakila')
 
 
 if __name__ == '__main__':

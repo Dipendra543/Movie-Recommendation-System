@@ -58,6 +58,18 @@ def actors_df_categorical(connection, original_df):
     return original_df
 
 
+def find_recent_purchase(customer_id):
+    query = f"""select rental.customer_id, film_list.FID, film_list.title, film_list.category, rental.rental_date
+            from rental
+            join inventory on rental.inventory_id = inventory.inventory_id
+            join film_list on inventory.film_id = film_list.FID
+            where rental.customer_id = {customer_id}
+            order by rental.customer_id, rental.rental_date desc;"""
+
+    recent_purchase_df = ad.get_data_from_query(ad.db_connection, query)
+    return recent_purchase_df
+
+
 def get_movie_similarity_dfs(connection):
     query = """select * from film_list;"""
     whole_df = ad.get_data_from_query(connection, query)
@@ -113,13 +125,7 @@ def create_similarity_df():
     print(movies_similarity.head(10))
 
 
-def recommend_movie(film_id):
-    print("Printing the similar movies::")
-    print(movies_similarity.loc[film_id])
-
-
 if __name__ == "__main__":
-    db_connection = ad.connect_database('localhost', 'root', os.getenv("MYSQL_LOCALHOST_PASSWORD"), 'sakila')
     query = """select rental.customer_id, CONCAT(customer.first_name," ",customer.last_name) as FULL_NAME,
             category.name as Category, count(*) as COUNT_RENTED_MOVIES
             from rental
@@ -131,15 +137,16 @@ if __name__ == "__main__":
             order by FULL_NAME, COUNT_RENTED_MOVIES desc;
 
         """
-    read_data = ad.get_data_from_query(db_connection, query, pd_df=True)
+    read_data = ad.get_data_from_query(ad.db_connection, query, pd_df=True)
     ad.set_multi_index(read_data, ['customer_id', 'FULL_NAME'], inplace=True)
     top3_genres_customers = select_top_genre(read_data)
-    # print(get_top_genre(top3_genres_customers,2))
+    print(get_top_genre(top3_genres_customers, 1))
 
 
-    all_similarity_dfs = get_movie_similarity_dfs(db_connection)
-    total_cosine_sim = find_movies_similarity(all_similarity_dfs)
-    create_df_with_cos(total_cosine_sim)
-    create_similarity_df()
-    recommend_movie(8)
+    # all_similarity_dfs = get_movie_similarity_dfs(db_connection)
+    # total_cosine_sim = find_movies_similarity(all_similarity_dfs)
+    # create_df_with_cos(total_cosine_sim)
+    # create_similarity_df()
+
+    print(find_recent_purchase(1))
 
