@@ -159,7 +159,8 @@ def get_movie_details(connection, movie_list):
     query = f"""select FID, title, category from film_list
                 where FID in {final_temp_string};"""
     required_df = ad.get_data_from_query(connection, query)
-    print(required_df)
+    # print(required_df)
+    return required_df
 
 
 def get_recent_watched_fav(top3_genres_customers, customer_id):
@@ -172,6 +173,7 @@ def get_recent_watched_fav(top3_genres_customers, customer_id):
     recent_purchased_df = find_recent_purchase(customer_id)
     # print('Comedy' in get_top_genre(top3_genres_customers, customer_id)[1])
     temp = get_top_genre(top3_genres_customers, customer_id)[1]
+    print(f"\n The top genres for the customer {customer_id} are {temp}")
     for i in range(recent_purchased_df.shape[0]):
         # print("Inside get_recent_watched_fav: ", each_category)
         # if each_category in get_top_genre(top3_genres_customers,customer_id)[1]:
@@ -179,7 +181,9 @@ def get_recent_watched_fav(top3_genres_customers, customer_id):
         #     break
         # print(recent_purchased_df.iloc[i]['category'])
         if recent_purchased_df.iloc[i]['category'] in temp:
-            # print("Match found:", recent_purchased_df.iloc[i]['category'])
+            print("\n The Recent movie purchased by customer which is also his/her favorite genre is:",
+                  recent_purchased_df.iloc[i]['FID'], recent_purchased_df.iloc[i]['title'],
+                  recent_purchased_df.iloc[i]['category'])
             return recent_purchased_df.iloc[i]['FID']
             break
 

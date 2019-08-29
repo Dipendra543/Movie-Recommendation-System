@@ -14,7 +14,8 @@ def recommend_movie_to_customer(customer_id):
     film_id_recent_fav = ie.get_recent_watched_fav(top3_genres_customers, customer_id)
     movie_list = ie.recommend_movie(movie_similarity_df, film_id_recent_fav)
 
-    ie.get_movie_details(ad.db_connection, movie_list)
+    recommended_movies_df = ie.get_movie_details(ad.db_connection, movie_list)
+    return recommended_movies_df
 
 
 def get_customer_input():
@@ -32,5 +33,7 @@ def get_customer_input():
 if __name__ == '__main__':
     # print(recommend_movie(70))
     cid = get_customer_input()
-    print(f"Following is the list of movies recommended for customer {cid}: \n")
-    recommend_movie_to_customer(cid)
+    print()
+    print(f" \n Following is the list of movies recommended for customer {cid}: \n",
+          recommend_movie_to_customer(cid))
+
