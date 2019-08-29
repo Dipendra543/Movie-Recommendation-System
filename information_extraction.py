@@ -8,7 +8,6 @@ warnings.filterwarnings('ignore')
 
 def select_top_genre(df):
     """
-
     :param df: give the grouped dataframe
     :return: a dictionary with key as customer_id and values as [FULL_NAME,(TOP 3 genres)]
     """
@@ -116,13 +115,41 @@ def get_similar_movies(film_id):
 
 
 def create_similarity_df():
-    global movies_similarity
+    # global movies_similarity
     movies_similarity = pd.DataFrame(columns=['index', 'sim_moveId', 'relevance'])
     for x in movies_sim_df.index.tolist():
         movies_similarity = movies_similarity.append(get_similar_movies(x))
 
     movies_similarity.set_index('index', inplace=True)
-    print(movies_similarity.head(10))
+    return movies_similarity
+    # print(movies_similarity.head(10))
+
+
+def recommend_movie(movie_sim_df, film_id):
+    print("Printing the similar movies::")
+    print(movie_sim_df.loc[film_id])
+
+
+def get_recent_watched_fav(top3_genres_customers, customer_id):
+    """
+
+    :param top3_genres_customers: the dictionary with top3 genre of each customer
+    :param customer_id: the id of the customer
+    :return: list of film ids of the recent movie the customer has watched and which falls under the top3_genres_customers
+    """
+    recent_purchased_df = find_recent_purchase(customer_id)
+    # print('Comedy' in get_top_genre(top3_genres_customers, customer_id)[1])
+    temp = get_top_genre(top3_genres_customers, customer_id)[1]
+    for i in range(recent_purchased_df.shape[0]):
+        # print("Inside get_recent_watched_fav: ", each_category)
+        # if each_category in get_top_genre(top3_genres_customers,customer_id)[1]:
+        #     print("First Match Found:", recent_purchased_df['FID'], each_category)
+        #     break
+        # print(recent_purchased_df.iloc[i]['category'])
+        if recent_purchased_df.iloc[i]['category'] in temp:
+            # print("Match found:", recent_purchased_df.iloc[i]['category'])
+            return recent_purchased_df.iloc[i]['FID']
+            break
 
 
 if __name__ == "__main__":
@@ -142,11 +169,12 @@ if __name__ == "__main__":
     top3_genres_customers = select_top_genre(read_data)
     print(get_top_genre(top3_genres_customers, 1))
 
-
-    # all_similarity_dfs = get_movie_similarity_dfs(db_connection)
-    # total_cosine_sim = find_movies_similarity(all_similarity_dfs)
-    # create_df_with_cos(total_cosine_sim)
-    # create_similarity_df()
+    all_similarity_dfs = get_movie_similarity_dfs(ad.db_connection)
+    total_cosine_sim = find_movies_similarity(all_similarity_dfs)
+    create_df_with_cos(total_cosine_sim)
 
     print(find_recent_purchase(1))
+    movie_similarity_df = create_similarity_df()
+    recommend_movie(movie_similarity_df, 317)
+    print(get_recent_watched_fav(top3_genres_customers, 1))
 
