@@ -171,15 +171,9 @@ def get_recent_watched_fav(top3_genres_customers, customer_id):
     :return: list of film ids of the recent movie the customer has watched and which falls under the top3_genres_customers
     """
     recent_purchased_df = find_recent_purchase(customer_id)
-    # print('Comedy' in get_top_genre(top3_genres_customers, customer_id)[1])
     temp = get_top_genre(top3_genres_customers, customer_id)[1]
     print(f"\n The top genres for the customer {customer_id} are {temp}")
     for i in range(recent_purchased_df.shape[0]):
-        # print("Inside get_recent_watched_fav: ", each_category)
-        # if each_category in get_top_genre(top3_genres_customers,customer_id)[1]:
-        #     print("First Match Found:", recent_purchased_df['FID'], each_category)
-        #     break
-        # print(recent_purchased_df.iloc[i]['category'])
         if recent_purchased_df.iloc[i]['category'] in temp:
             print("\n The Recent movie purchased by customer which is also his/her favorite genre is:",
                   recent_purchased_df.iloc[i]['FID'], recent_purchased_df.iloc[i]['title'],
