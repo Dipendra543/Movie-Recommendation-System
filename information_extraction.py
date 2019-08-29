@@ -6,24 +6,38 @@ import warnings
 warnings.filterwarnings('ignore')
 
 
-def select_top_genre(df):
+def select_top_genre():
     """
-    :param df: give the grouped dataframe
     :return: a dictionary with key as customer_id and values as [FULL_NAME,(TOP 3 genres)]
     """
+    query = """select rental.customer_id, CONCAT(customer.first_name," ",customer.last_name) as FULL_NAME,
+                category.name as Category, count(*) as COUNT_RENTED_MOVIES
+                from rental
+                join inventory on rental.inventory_id = inventory.inventory_id
+                join film_category on inventory.film_id = film_category.film_id
+                join category on film_category.category_id = category.category_id
+                join customer on customer.customer_id = rental.customer_id
+                group by rental.customer_id, category.category_id
+                order by FULL_NAME, COUNT_RENTED_MOVIES desc;
+
+            """
+    read_data = ad.get_data_from_query(ad.db_connection, query, pd_df=True)
+    ad.set_multi_index(read_data, ['customer_id', 'FULL_NAME'], inplace=True)
     top3_dict = {}
     # print(df.index.drop_duplicates(keep='first'))
-    multi_index = df.index.drop_duplicates(keep='first')
+    multi_index = read_data.index.drop_duplicates(keep='first')
+    # print(read_data.head())
     for each_element in multi_index:
         # print(each_element)
         # print(df.loc[each_element[0]]['Category'].head(3).to_list())
-        temp = tuple(df.loc[each_element[0]]['Category'].head(3).to_list())
+        temp = tuple(read_data.loc[each_element[0]]['Category'].head(3).to_list())
         top3_dict[each_element[0]] = [each_element[1], temp]
 
     return top3_dict
 
 
 def get_top_genre(genre_dict, customer_id):
+    # print(type(genre_dict), customer_id)
     return genre_dict[customer_id]
 
 
@@ -126,8 +140,26 @@ def create_similarity_df():
 
 
 def recommend_movie(movie_sim_df, film_id):
-    print("Printing the similar movies::")
-    print(movie_sim_df.loc[film_id])
+    # print(movie_sim_df.head())
+    # print("Printing the similar movies::")
+    movie_list = list(movie_sim_df.loc[film_id]['sim_moveId'])
+    # print(movie_list)
+    return movie_list
+
+
+def get_movie_details(connection, movie_list):
+    temp_string = ""
+    for each_movie in movie_list:
+        temp_string += str(each_movie) + ","
+
+    temp_string = temp_string.rstrip(',')
+    final_temp_string = "("+temp_string+")"
+    # print("final_temp_string", final_temp_string)
+
+    query = f"""select FID, title, category from film_list
+                where FID in {final_temp_string};"""
+    required_df = ad.get_data_from_query(connection, query)
+    print(required_df)
 
 
 def get_recent_watched_fav(top3_genres_customers, customer_id):
@@ -153,28 +185,5 @@ def get_recent_watched_fav(top3_genres_customers, customer_id):
 
 
 if __name__ == "__main__":
-    query = """select rental.customer_id, CONCAT(customer.first_name," ",customer.last_name) as FULL_NAME,
-            category.name as Category, count(*) as COUNT_RENTED_MOVIES
-            from rental
-            join inventory on rental.inventory_id = inventory.inventory_id
-            join film_category on inventory.film_id = film_category.film_id
-            join category on film_category.category_id = category.category_id
-            join customer on customer.customer_id = rental.customer_id
-            group by rental.customer_id, category.category_id
-            order by FULL_NAME, COUNT_RENTED_MOVIES desc;
-
-        """
-    read_data = ad.get_data_from_query(ad.db_connection, query, pd_df=True)
-    ad.set_multi_index(read_data, ['customer_id', 'FULL_NAME'], inplace=True)
-    top3_genres_customers = select_top_genre(read_data)
-    print(get_top_genre(top3_genres_customers, 1))
-
-    all_similarity_dfs = get_movie_similarity_dfs(ad.db_connection)
-    total_cosine_sim = find_movies_similarity(all_similarity_dfs)
-    create_df_with_cos(total_cosine_sim)
-
-    print(find_recent_purchase(1))
-    movie_similarity_df = create_similarity_df()
-    recommend_movie(movie_similarity_df, 317)
-    print(get_recent_watched_fav(top3_genres_customers, 1))
+    pass
 
