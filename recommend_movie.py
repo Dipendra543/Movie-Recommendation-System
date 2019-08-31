@@ -3,7 +3,6 @@ import access_data as ad
 
 
 def recommend_movie_to_customer(customer_id):
-    # top3_genres_customers = ie.get_top_genre(ie.select_top_genre(), customer_id)
     top3_genres_customers = ie.select_top_genre()
     all_similarity_dfs = ie.get_movie_similarity_dfs(ad.db_connection)
     total_cosine_sim = ie.find_movies_similarity(all_similarity_dfs)
