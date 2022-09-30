@@ -1,4 +1,4 @@
-joblib==0.13.2
+joblib==1.2.0
 mysql-connector-python==8.0.17
 numpy==1.17.1
 pandas==0.25.1
